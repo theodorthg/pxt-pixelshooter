@@ -1,0 +1,22 @@
+{
+    "name": "pixelshooter",
+    "version": "0.1.0",
+    "description": "Pixel-Shooter: Weltraum-Shooter-Engine mit Blöcken, generierten Grafiken und Sounds, bis zu 4 Spieler",
+    "dependencies": {
+        "device": "*",
+        "pxt-status-bar": "github:jwunderl/pxt-status-bar#v0.4.2"
+    },
+    "files": [
+        "README.md",
+        "assets.ts",
+        "sounds.ts",
+        "engine.ts"
+    ],
+    "testFiles": [
+        "test.ts"
+    ],
+    "supportedTargets": [
+        "arcade"
+    ],
+    "preferredEditor": "tsprj"
+}

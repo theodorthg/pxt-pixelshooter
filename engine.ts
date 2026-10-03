@@ -31,6 +31,14 @@ namespace pixelshooter {
         //% block="Eismeer"
         Ice = 3
     }
+    /** Flugrichtung: senkrecht nach oben oder waagrecht nach rechts */
+    export enum Direction {
+        //% block="nach oben (senkrecht)"
+        Up = 0,
+        //% block="nach rechts (waagrecht)"
+        Right = 1
+    }
+    let horizontal = false
     const STYLE_NAMES = ["Space", "Sea", "Desert", "Ice"]
     const STYLE_TITLES = ["Sternenfeld", "Inselmeer", "Duenenmeer", "Eismeer"]
     const ENEMY_NAMES = ["Fighter", "Zigzag", "Diver", "Turret"]
@@ -83,11 +91,33 @@ namespace pixelshooter {
         powerImgs = [projImg("shPower", shooterGfx.power), projImg("shShield", shooterGfx.shield),
             projImg("shBomb", shooterGfx.bomb), projImg("shLife", shooterGfx.life)]
         explosionFrames = projAnim("shExplosion", shooterGfx.explosion)
+        if (horizontal) {
+            // Grafiken sind für "nach oben" gezeichnet – waagrecht um 90° drehen
+            for (let i = 0; i < MAX_PLAYERS; i++) shipFrames[i] = rot(shipFrames[i])
+            for (let i = 0; i < 4; i++) enemyFrames[i] = rot(enemyFrames[i])
+            bossFrames = rot(bossFrames)
+            bossHurtImg = bossHurtImg.rotated(90)
+            shotImg = shotImg.rotated(90)
+        }
         for (let s = 0; s < STYLE_NAMES.length; s++) {
             bgFar[s] = projImg("sh" + STYLE_NAMES[s] + "Far", shooterGfx.backgrounds[s][0])
             bgNear[s] = projImg("sh" + STYLE_NAMES[s] + "Near", shooterGfx.backgrounds[s][1])
         }
     }
+
+    function rot(frames: Image[]): Image[] { return frames.map(function (f: Image) { return f.rotated(90) }) }
+
+    // Spielfeld in Flug-Koordinaten: "quer" 0..1 über die Breite, "weg" = Pixel vom Eintrittsrand
+    // (oben bzw. rechts). Vorwärts-Tempo bewegt Gegner auf die Spieler zu.
+    function place(sp: Sprite, across: number, away: number) {
+        if (horizontal) sp.setPosition(160 - away, 8 + across * 104)
+        else sp.setPosition(across * 160, away)
+    }
+    function setVel(sp: Sprite, fwd: number, side: number) {
+        if (horizontal) { sp.vx = -fwd; sp.vy = side * 0.75 }
+        else { sp.vy = fwd; sp.vx = side }
+    }
+    function progress(sp: Sprite): number { return horizontal ? 160 - sp.x : sp.y }
 
     function play(p: music.Playable) { music.play(p, music.PlaybackMode.InBackground) }
 
@@ -120,6 +150,14 @@ namespace pixelshooter {
     // ---------------------------------------------------------------- Scrollender Hintergrund (2 Ebenen, nahtlos)
     scene.createRenderable(-10, function (target: Image, camera: scene.Camera) {
         if (!bgFar[style]) return
+        if (horizontal) {
+            const xf = -(Math.floor(scrollY * 0.5) % 160), xn = -(Math.floor(scrollY) % 160)
+            target.drawImage(bgFar[style], xf, 0)
+            target.drawImage(bgFar[style], xf + 160, 0)
+            target.drawTransparentImage(bgNear[style], xn, 0)
+            target.drawTransparentImage(bgNear[style], xn + 160, 0)
+            return
+        }
         const yf = Math.floor(scrollY * 0.5) % 120, yn = Math.floor(scrollY) % 120
         target.drawImage(bgFar[style], 0, yf)
         target.drawImage(bgFar[style], 0, yf - 120)
@@ -138,7 +176,8 @@ namespace pixelshooter {
         if (joined[i] || i >= maxPlayers || !running) return
         joined[i] = true
         const s = sprites.create(shipFrames[i][0], SpriteKind.Player)
-        s.setPosition(30 + i * 33, 105)
+        if (horizontal) s.setPosition(20, 22 + i * 26)
+        else s.setPosition(30 + i * 33, 105)
         s.setStayInScreen(true)
         s.z = 10
         s.data["p"] = i
@@ -163,9 +202,8 @@ namespace pixelshooter {
         const vxs = lvl >= 3 ? [-40, 0, 40] : [0, 0, 0]
         for (let k = 0; k < xs.length; k++) {
             const b = sprites.create(shotImg, SpriteKind.ShShot)
-            b.setPosition(s.x + xs[k], s.top)
-            b.vy = -200
-            b.vx = vxs[k]
+            if (horizontal) { b.setPosition(s.right, s.y + xs[k]); b.vx = 200; b.vy = vxs[k] }
+            else { b.setPosition(s.x + xs[k], s.top); b.vy = -200; b.vx = vxs[k] }
             b.data["p"] = i
             b.setFlag(SpriteFlag.AutoDestroy, true)
         }
@@ -258,17 +296,17 @@ namespace pixelshooter {
 
     function spawnEnemy(type: number, x: number, y: number): Sprite {
         const e = sprites.create(enemyFrames[type][0], SpriteKind.ShEnemy)
-        e.setPosition(x, y)
+        place(e, x / 160, y)
         animation.runImageAnimation(e, enemyFrames[type], 120, true)
         e.data["t"] = type
         e.data["hp"] = type == E_TURRET ? 3 : type == E_ZIGZAG ? 2 : 1
-        e.data["x0"] = x
+        e.data["x0"] = horizontal ? e.y : e.x
         e.data["born"] = game.runtime()
         e.data["shot"] = game.runtime() + randint(600, 2200)
         e.setFlag(SpriteFlag.AutoDestroy, true)
-        if (type == E_TURRET) { e.vy = scrollSpeed; e.z = -1 }
-        else if (type == E_DIVER) e.vy = speed(45)
-        else e.vy = speed(type == E_ZIGZAG ? 28 : 38)
+        if (type == E_TURRET) { setVel(e, scrollSpeed, 0); e.z = -1 }
+        else if (type == E_DIVER) setVel(e, speed(45), 0)
+        else setVel(e, speed(type == E_ZIGZAG ? 28 : 38), 0)
         return e
     }
 
@@ -286,7 +324,8 @@ namespace pixelshooter {
     function aimShot(from: Sprite, v: number) {
         const t = nearestShip(from.x, from.y)
         const b = sprites.create(enemyShotImg, SpriteKind.ShEnemyShot)
-        b.setPosition(from.x, from.bottom)
+        if (horizontal) b.setPosition(from.left, from.y)
+        else b.setPosition(from.x, from.bottom)
         b.setFlag(SpriteFlag.AutoDestroy, true)
         if (t) {
             const dx = t.x - from.x, dy = t.y - from.y, len = Math.max(1, Math.sqrt(dx * dx + dy * dy))
@@ -300,13 +339,15 @@ namespace pixelshooter {
         for (const e of sprites.allOfKind(SpriteKind.ShEnemy)) {
             const t = e.data["t"]
             const age = (now - e.data["born"]) / 1000
-            if (t == E_ZIGZAG) e.x = e.data["x0"] + Math.sin(age * 2.2) * 40
-            else if (t == E_DIVER && !e.data["locked"] && e.y > 30) {
+            if (t == E_ZIGZAG) {
+                if (horizontal) e.y = e.data["x0"] + Math.sin(age * 2.2) * 30
+                else e.x = e.data["x0"] + Math.sin(age * 2.2) * 40
+            } else if (t == E_DIVER && !e.data["locked"] && progress(e) > 30) {
                 const s = nearestShip(e.x, e.y)
-                if (s) { e.vx = Math.sign(s.x - e.x) * speed(35); e.vy = speed(75) }
+                if (s) setVel(e, speed(75), horizontal ? Math.sign(s.y - e.y) * speed(35) / 0.75 : Math.sign(s.x - e.x) * speed(35))
                 e.data["locked"] = true
             }
-            if (now > e.data["shot"] && e.y > 0 && e.y < 90) {
+            if (now > e.data["shot"] && progress(e) > 0 && progress(e) < 90) {
                 e.data["shot"] = now + Math.max(700, randint(1600, 3200) - stage * 300)
                 if (t != E_DIVER) aimShot(e, t == E_TURRET ? 70 : 55)
             }
@@ -360,8 +401,9 @@ namespace pixelshooter {
         play(shooterSounds.bossTune)
         banner("WARNUNG!", "Endboss naht")
         boss = sprites.create(bossFrames[0], SpriteKind.ShBoss)
-        boss.setPosition(80, -20)
-        boss.vy = 20
+        if (horizontal) { boss.setPosition(180, 60); boss.vx = -20 }
+        else { boss.setPosition(80, -20); boss.vy = 20 }
+        boss.data["in"] = true
         boss.z = 5
         animation.runImageAnimation(boss, bossFrames, 150, true)
         const players = Math.max(1, aliveCount())
@@ -377,14 +419,19 @@ namespace pixelshooter {
 
     function updateBoss(now: number) {
         if (!boss) return
-        if (boss.y >= 26 && boss.vy > 0) { boss.vy = 0; boss.vx = speed(30) }
-        if (boss.vy == 0) {
+        if (boss.data["in"]) {
+            if (horizontal && boss.x <= 132) { boss.vx = 0; boss.vy = speed(25); boss.data["in"] = false }
+            if (!horizontal && boss.y >= 26) { boss.vy = 0; boss.vx = speed(30); boss.data["in"] = false }
+        } else if (horizontal) {
+            if (boss.y < 24) boss.vy = Math.abs(boss.vy)
+            if (boss.y > 96) boss.vy = -Math.abs(boss.vy)
+        } else {
             if (boss.x < 26) boss.vx = Math.abs(boss.vx)
             if (boss.x > 134) boss.vx = -Math.abs(boss.vx)
         }
         if (now < bossFlashUntil) { animation.stopAnimation(animation.AnimationTypes.All, boss); boss.setImage(bossHurtImg) }
         else if (boss.image == bossHurtImg) animation.runImageAnimation(boss, bossFrames, 150, true)
-        if (boss.vy == 0 && now > bossNextShot) {
+        if (!boss.data["in"] && now > bossNextShot) {
             const angry = bossBar.value < bossBar.max / 2
             bossPhase = (bossPhase + 1) % 3
             if (bossPhase == 0) aimShot(boss, 80)
@@ -392,10 +439,9 @@ namespace pixelshooter {
                 const n = angry ? 7 : 5
                 for (let k = 0; k < n; k++) {
                     const b = sprites.create(enemyShotImg, SpriteKind.ShEnemyShot)
-                    b.setPosition(boss.x, boss.bottom - 4)
                     const a = (k - (n - 1) / 2) * 0.32
-                    b.vx = Math.sin(a) * 60
-                    b.vy = Math.cos(a) * 60
+                    if (horizontal) { b.setPosition(boss.left + 4, boss.y); b.vx = -Math.cos(a) * 60; b.vy = Math.sin(a) * 60 }
+                    else { b.setPosition(boss.x, boss.bottom - 4); b.vx = Math.sin(a) * 60; b.vy = Math.cos(a) * 60 }
                     b.setFlag(SpriteFlag.AutoDestroy, true)
                 }
                 play(shooterSounds.enemyShoot)
@@ -405,7 +451,7 @@ namespace pixelshooter {
     }
 
     function damageBoss(n: number, by: number) {
-        if (!boss || boss.vy > 0) return
+        if (!boss || boss.data["in"]) return
         bossBar.value -= n
         bossFlashUntil = game.runtime() + 60
         if (bossBar.value <= 0) {
@@ -549,6 +595,14 @@ namespace pixelshooter {
             startStage(0)
         })
     }
+
+    /**
+     * Senkrecht (Spieler fliegt nach oben) oder waagrecht (Spieler fliegt nach rechts,
+     * die Welt scrollt von rechts nach links). Vor "starte Pixel-Shooter" setzen.
+     */
+    //% blockId=ps_direction block="setze Flugrichtung auf $d"
+    //% group="Start" weight=95
+    export function setDirection(d: Direction) { if (!started) horizontal = d == Direction.Right }
 
     //% blockId=ps_title block="setze Titel auf $text"
     //% text.defl="PIXEL-SHOOTER"

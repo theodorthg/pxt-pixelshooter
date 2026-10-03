@@ -1,10 +1,11 @@
 # Pixel-Shooter
 
-Senkrecht scrollender Weltraum-Shooter für MakeCode Arcade, als Erweiterung mit eigenen Blöcken.
+Senkrecht oder waagrecht scrollender Shooter für MakeCode Arcade, als Erweiterung mit eigenen Blöcken.
 Grafiken und Sounds stammen aus dem [Arcade Asset Generator](https://theodorthg.github.io/arcade-asset-generator/).
 
 - 1 bis 4 Spieler gleichzeitig: weitere Spieler steigen jederzeit mit **A** auf ihrem Controller ein,
   am selben Gerät oder online im Mehrspieler-Modus von arcade.makecode.com.
+- **Flugrichtung:** Block `setze Flugrichtung auf nach oben (senkrecht) / nach rechts (waagrecht)`. Im waagrechten Modus dreht die Engine alle Figuren selbst um 90° – eigene Grafiken zeichnest du immer für „nach oben“.
 - **A** halten = schießen, **B** = Bombe (räumt den Bildschirm, trifft den Boss).
 - Gegner: Jäger, Untertassen im Zickzack, Sturzflieger, Geschütztürme am Boden.
 - Power-ups: **P** stärkere Waffe (bis Dreifachschuss), **S** Schild, **B** Bombe, **L** Leben.

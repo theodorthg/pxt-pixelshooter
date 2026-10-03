@@ -1,7 +1,7 @@
 {
     "name": "pixelshooter",
-    "version": "0.1.0",
-    "description": "Pixel-Shooter: Weltraum-Shooter-Engine mit Blöcken, generierten Grafiken und Sounds, bis zu 4 Spieler",
+    "version": "0.2.0",
+    "description": "Pixel-Shooter: senkrechter oder waagrechter Shooter-Engine mit Blöcken, generierten Grafiken und Sounds, bis zu 4 Spieler",
     "dependencies": {
         "device": "*",
         "pxt-status-bar": "github:jwunderl/pxt-status-bar#v0.4.2"

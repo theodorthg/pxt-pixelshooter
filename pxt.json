@@ -1,6 +1,6 @@
 {
     "name": "pixelshooter",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "description": "Pixel-Shooter: senkrechter oder waagrechter Shooter-Engine mit Blöcken, generierten Grafiken und Sounds, bis zu 4 Spieler",
     "dependencies": {
         "device": "*",
@@ -10,6 +10,7 @@
         "README.md",
         "assets.ts",
         "sounds.ts",
+        "palettes.ts",
         "engine.ts"
     ],
     "testFiles": [

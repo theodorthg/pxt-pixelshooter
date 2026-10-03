@@ -120,6 +120,11 @@ namespace pixelshooter {
     function progress(sp: Sprite): number { return horizontal ? 160 - sp.x : sp.y }
 
     function play(p: music.Playable) { music.play(p, music.PlaybackMode.InBackground) }
+    // Paletten je Stil (palettes.ts): beim Laden wird die Palette des Stils gesetzt
+    let stylePalettes = true
+    function applyPalette(s: number) {
+        if (stylePalettes && s >= 0 && s < shPalettes.list.length) image.setPalette(shPalettes.list[s])
+    }
 
     // ---------------------------------------------------------------- Zustand
     const ctrls = [controller.player1, controller.player2, controller.player3, controller.player4]
@@ -521,6 +526,7 @@ namespace pixelshooter {
     function startStage(i: number) {
         stage = i
         style = styleOf(i)
+        applyPalette(style)
         boss = null
         sprites.destroyAllSpritesOfKind(SpriteKind.ShEnemy)
         sprites.destroyAllSpritesOfKind(SpriteKind.ShEnemyShot)
@@ -696,4 +702,13 @@ namespace pixelshooter {
     //% n.min=1 n.max=4 n.defl=1
     //% group="Werte" weight=80
     export function weaponLevel(n: number): number { return weapon[Math.clamp(1, MAX_PLAYERS, n) - 1] }
+
+    /**
+     * Jeder Stil bringt seine eigene 16-Farben-Palette mit (z. B. Blautöne im Meer, Glut in der Lavahöhle).
+     * Aus: das Spiel nutzt die Palette des Projekts.
+     */
+    //% blockId=sh_palettes block="Stil-Paletten $on"
+    //% on.shadow=toggleOnOff on.defl=true
+    //% group="Einstellungen" weight=10
+    export function useStylePalettes(on: boolean) { stylePalettes = on }
 }

@@ -33,3 +33,7 @@ Die Engine sucht zuerst im Projekt (Assets-Tab) nach diesen Namen, sonst nimmt s
 | Hintergründe (160×120, nahtlos) | Bild | `shSpaceFar`/`shSpaceNear`, `shSeaFar`/`shSeaNear`, `shDesertFar`/…, `shIceFar`/… |
 
 Einbinden: Erweiterungen → `github:theodorthg/pxt-pixelshooter`. Lizenz: MIT.
+
+## Stil-Paletten (ab v0.3.0)
+
+Jeder Stil bringt eine eigene 16-Farben-Palette mit; sie wird beim Laden gesetzt. Weiß, Rot, Gelb, Beige, Braun und Schwarz bleiben gleich. Abschalten mit dem Block „Stil-Paletten aus“ (`pixelshooter.useStylePalettes(false)`), dann gilt die Palette des Projekts. Farben: `generator/assetgen.js` (GENRE_PALETTES), neu erzeugen mit `node tools/build-palettes.js`.
